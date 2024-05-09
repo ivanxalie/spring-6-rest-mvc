@@ -1,7 +1,7 @@
 package guru.springframework.spring6restmvc.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import guru.springframework.spring6restmvc.model.Beer;
+import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.services.BeerService;
 import guru.springframework.spring6restmvc.services.BeerServiceImpl;
 import lombok.SneakyThrows;
@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BeerControllerTest {
 
     private BeerService serviceImpl;
-    private Beer beer;
+    private BeerDTO beerDto;
 
     @MockBean
     private BeerService service;
@@ -49,25 +49,25 @@ class BeerControllerTest {
     private ArgumentCaptor<UUID> uuidArgumentCaptor;
 
     @Captor
-    private ArgumentCaptor<Beer> beerArgumentCaptor;
+    private ArgumentCaptor<BeerDTO> beerArgumentCaptor;
 
     @BeforeEach
     void setUp() {
         serviceImpl = new BeerServiceImpl();
-        beer = serviceImpl.beers().getFirst();
+        beerDto = serviceImpl.beers().getFirst();
     }
 
     @Test
     void getBeerById() {
-        given(service.findBeerById(beer.getId())).willReturn(Optional.of(beer));
+        given(service.findBeerById(beerDto.getId())).willReturn(Optional.of(beerDto));
 
         performAndExpect(
-                get(PATH_ID, beer.getId()).accept(APPLICATION_JSON),
+                get(PATH_ID, beerDto.getId()).accept(APPLICATION_JSON),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
-                jsonPath("$.id", is(beer.getId().toString())),
-                jsonPath("$.name", is(beer.getName()))
+                jsonPath("$.id", is(beerDto.getId().toString())),
+                jsonPath("$.name", is(beerDto.getName()))
         );
     }
 
@@ -79,29 +79,29 @@ class BeerControllerTest {
 
     @Test
     void beers() {
-        List<Beer> beers = serviceImpl.beers();
-        given(service.beers()).willReturn(beers);
+        List<BeerDTO> beerDTOS = serviceImpl.beers();
+        given(service.beers()).willReturn(beerDTOS);
 
         performAndExpect(
                 get(PATH).accept(APPLICATION_JSON),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
-                jsonPath("$.length()", is(beers.size()))
+                jsonPath("$.length()", is(beerDTOS.size()))
         );
     }
 
     @Test
     @SneakyThrows
     void saveNewBeer() {
-        Beer beer = serviceImpl.beers().getFirst();
-        beer.setVersion(null);
-        beer.setId(null);
+        BeerDTO beerDto = serviceImpl.beers().getFirst();
+        beerDto.setVersion(null);
+        beerDto.setId(null);
 
-        given(service.saveNewBeer(any(Beer.class))).willReturn(serviceImpl.beers().get(1));
+        given(service.saveNewBeer(any(BeerDTO.class))).willReturn(serviceImpl.beers().get(1));
 
         performAndExpect(
-                post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(beer)),
+                post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(beerDto)),
 
                 status().isCreated(),
                 header().exists("Location")
@@ -111,16 +111,16 @@ class BeerControllerTest {
     @Test
     @SneakyThrows
     void updateBeer() {
-        Beer beer = serviceImpl.beers().getFirst();
+        BeerDTO beerDto = serviceImpl.beers().getFirst();
 
         performAndExpect(
-                put(PATH_ID, beer.getId()).contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(beer)),
+                put(PATH_ID, beerDto.getId()).contentType(APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(beerDto)),
 
                 status().isNoContent()
         );
 
-        verify(service).updateById(beer.getId(), beer);
+        verify(service).updateById(beerDto.getId(), beerDto);
     }
 
     @Test
@@ -138,13 +138,13 @@ class BeerControllerTest {
 
     @Test
     void patchBeer() throws Exception {
-        Beer beer = serviceImpl.beers().getFirst();
+        BeerDTO beerDto = serviceImpl.beers().getFirst();
 
         Map<String, Object> beerMap = new HashMap<>();
         beerMap.put("name", "New Beer");
 
         performAndExpect(
-                patch(PATH_ID, beer.getId())
+                patch(PATH_ID, beerDto.getId())
                         .contentType(APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(beerMap)),
 
@@ -153,7 +153,7 @@ class BeerControllerTest {
 
         verify(service).patchBeerById(uuidArgumentCaptor.capture(), beerArgumentCaptor.capture());
 
-        assertThat(beer.getId()).isEqualTo(uuidArgumentCaptor.getValue());
+        assertThat(beerDto.getId()).isEqualTo(uuidArgumentCaptor.getValue());
         assertThat(beerMap.get("name")).isEqualTo(beerArgumentCaptor.getValue().getName());
     }
 

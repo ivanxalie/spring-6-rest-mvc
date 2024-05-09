@@ -1,6 +1,6 @@
 package guru.springframework.spring6restmvc.controller;
 
-import guru.springframework.spring6restmvc.model.Beer;
+import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.services.BeerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,25 +22,25 @@ public class BeerController {
     private final BeerService service;
 
     @GetMapping(ID)
-    public Beer getBeerById(@PathVariable("beerId") UUID id) {
+    public BeerDTO getBeerById(@PathVariable("beerId") UUID id) {
         log.debug("Get Beer by Id - in controller. Id: {}", id);
         return service.findBeerById(id).orElseThrow(NotFountException::new);
     }
 
     @GetMapping
-    public List<Beer> beers() {
+    public List<BeerDTO> beers() {
         return service.beers();
     }
 
     @PostMapping
-    public ResponseEntity<Beer> addNewBeer(@RequestBody Beer beer) {
-        Beer newBeer = service.saveNewBeer(beer);
-        return ResponseEntity.created(URI.create("http://localhost:8080/api/v1/beer/" + newBeer.getId())).body(newBeer);
+    public ResponseEntity<BeerDTO> addNewBeer(@RequestBody BeerDTO beerDto) {
+        BeerDTO newBeerDTO = service.saveNewBeer(beerDto);
+        return ResponseEntity.created(URI.create("http://localhost:8080/api/v1/beer/" + newBeerDTO.getId())).body(newBeerDTO);
     }
 
     @PutMapping(ID)
-    public ResponseEntity<?> updateById(@PathVariable("beerId") UUID id, @RequestBody Beer beer) {
-        service.updateById(id, beer);
+    public ResponseEntity<?> updateById(@PathVariable("beerId") UUID id, @RequestBody BeerDTO beerDto) {
+        service.updateById(id, beerDto);
         return ResponseEntity.noContent().build();
     }
 
@@ -51,8 +51,8 @@ public class BeerController {
     }
 
     @PatchMapping(ID)
-    public ResponseEntity<?> updateBeerPatchById(@PathVariable("beerId") UUID id, @RequestBody Beer beer) {
-        service.patchBeerById(id, beer);
+    public ResponseEntity<?> updateBeerPatchById(@PathVariable("beerId") UUID id, @RequestBody BeerDTO beerDto) {
+        service.patchBeerById(id, beerDto);
         return ResponseEntity.noContent().build();
     }
 }

@@ -2,7 +2,7 @@ package guru.springframework.spring6restmvc.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import guru.springframework.spring6restmvc.model.Customer;
+import guru.springframework.spring6restmvc.model.CustomerDTO;
 import guru.springframework.spring6restmvc.services.CustomerService;
 import guru.springframework.spring6restmvc.services.CustomerServiceImpl;
 import lombok.SneakyThrows;
@@ -48,7 +48,7 @@ class CustomerControllerTest {
     private ArgumentCaptor<UUID> uuidArgumentCaptor;
 
     @Captor
-    private ArgumentCaptor<Customer> customerArgumentCaptor;
+    private ArgumentCaptor<CustomerDTO> customerArgumentCaptor;
 
     @BeforeEach
     void setUp() {
@@ -57,31 +57,31 @@ class CustomerControllerTest {
 
     @Test
     void customers() {
-        List<Customer> customers = serviceImpl.customers();
-        given(customerService.customers()).willReturn(customers);
+        List<CustomerDTO> customerDTOS = serviceImpl.customers();
+        given(customerService.customers()).willReturn(customerDTOS);
 
         performAndExpect(
                 get(PATH).accept(APPLICATION_JSON),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
-                jsonPath("$.length()", is(customers.size()))
+                jsonPath("$.length()", is(customerDTOS.size()))
         );
     }
 
     @Test
     void getCustomerById() {
-        Customer customer = serviceImpl.customers().getFirst();
+        CustomerDTO customerDTO = serviceImpl.customers().getFirst();
 
-        given(customerService.findById(customer.getId())).willReturn(Optional.of(customer));
+        given(customerService.findById(customerDTO.getId())).willReturn(Optional.of(customerDTO));
 
         performAndExpect(
-                get(PATH_ID, customer.getId()).accept(APPLICATION_JSON),
+                get(PATH_ID, customerDTO.getId()).accept(APPLICATION_JSON),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
-                jsonPath("$.id", is(customer.getId().toString())),
-                jsonPath("$.name", is(customer.getName()))
+                jsonPath("$.id", is(customerDTO.getId().toString())),
+                jsonPath("$.name", is(customerDTO.getName()))
         );
     }
 
@@ -93,12 +93,12 @@ class CustomerControllerTest {
 
     @Test
     void saveNewCustomer() throws Exception {
-        Customer customer = serviceImpl.customers().getFirst();
+        CustomerDTO customerDTO = serviceImpl.customers().getFirst();
 
-        given(customerService.saveNewCustomer(any())).willReturn(customer);
+        given(customerService.saveNewCustomer(any())).willReturn(customerDTO);
 
         performAndExpect(
-                post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(customer)),
+                post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(customerDTO)),
 
                 status().isCreated(),
                 jsonPath("$.version", is(1)),
@@ -108,16 +108,16 @@ class CustomerControllerTest {
 
     @Test
     void updateCustomer() throws Exception {
-        Customer customer = serviceImpl.customers().getFirst();
+        CustomerDTO customerDTO = serviceImpl.customers().getFirst();
 
         performAndExpect(
-                put(PATH_ID, customer.getId()).contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(customer)),
+                put(PATH_ID, customerDTO.getId()).contentType(APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(customerDTO)),
 
                 status().isNoContent()
         );
 
-        verify(customerService).updateById(customer.getId(), customer);
+        verify(customerService).updateById(customerDTO.getId(), customerDTO);
     }
 
     @Test
@@ -134,12 +134,12 @@ class CustomerControllerTest {
 
     @Test
     void patchCustomer() throws JsonProcessingException {
-        Customer customer = serviceImpl.customers().getFirst();
+        CustomerDTO customerDTO = serviceImpl.customers().getFirst();
 
         Map<String, Object> patch = Collections.singletonMap("name", "Gay");
 
         performAndExpect(
-                patch(PATH_ID, customer.getId())
+                patch(PATH_ID, customerDTO.getId())
                         .contentType(APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(patch)),
 
@@ -148,7 +148,7 @@ class CustomerControllerTest {
 
         verify(customerService).patchById(uuidArgumentCaptor.capture(), customerArgumentCaptor.capture());
 
-        assertThat(customer.getId()).isEqualTo(uuidArgumentCaptor.getValue());
+        assertThat(customerDTO.getId()).isEqualTo(uuidArgumentCaptor.getValue());
         assertThat(patch.get("name")).isEqualTo(customerArgumentCaptor.getValue().getName());
     }
 

@@ -1,6 +1,6 @@
 package guru.springframework.spring6restmvc.controller;
 
-import guru.springframework.spring6restmvc.model.Customer;
+import guru.springframework.spring6restmvc.model.CustomerDTO;
 import guru.springframework.spring6restmvc.services.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,24 +20,24 @@ public class CustomerController {
     private final CustomerService service;
 
     @GetMapping
-    public List<Customer> customers() {
+    public List<CustomerDTO> customers() {
         return service.customers();
     }
 
     @GetMapping(ID)
-    public Customer getById(@PathVariable("customerId") UUID id) {
+    public CustomerDTO getById(@PathVariable("customerId") UUID id) {
         return service.findById(id).orElseThrow(NotFountException::new);
     }
 
     @PostMapping
-    public ResponseEntity<Customer> saveNewCustomer(@RequestBody Customer customer) {
-        Customer saved = service.saveNewCustomer(customer);
+    public ResponseEntity<CustomerDTO> saveNewCustomer(@RequestBody CustomerDTO customerDTO) {
+        CustomerDTO saved = service.saveNewCustomer(customerDTO);
         return ResponseEntity.created(URI.create("http://localhost:8080/api/v1/customer/" + saved.getId())).body(saved);
     }
 
     @PutMapping(ID)
-    public ResponseEntity<?> updateById(@PathVariable("customerId") UUID id, @RequestBody Customer customer) {
-        service.updateById(id, customer);
+    public ResponseEntity<?> updateById(@PathVariable("customerId") UUID id, @RequestBody CustomerDTO customerDTO) {
+        service.updateById(id, customerDTO);
         return ResponseEntity.noContent().build();
     }
 
@@ -48,8 +48,8 @@ public class CustomerController {
     }
 
     @PatchMapping(ID)
-    public ResponseEntity<?> patchById(@PathVariable("customerId") UUID id, @RequestBody Customer customer) {
-        service.patchById(id, customer);
+    public ResponseEntity<?> patchById(@PathVariable("customerId") UUID id, @RequestBody CustomerDTO customerDTO) {
+        service.patchById(id, customerDTO);
         return ResponseEntity.noContent().build();
     }
 }
