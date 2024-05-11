@@ -58,8 +58,8 @@ class BeerControllerTest {
     }
 
     @Test
-    void getBeerById() {
-        given(service.findBeerById(beerDto.getId())).willReturn(Optional.of(beerDto));
+    void findBeerById() {
+        given(service.findById(beerDto.getId())).willReturn(Optional.of(beerDto));
 
         performAndExpect(
                 get(PATH_ID, beerDto.getId()).accept(APPLICATION_JSON),
@@ -113,6 +113,8 @@ class BeerControllerTest {
     void updateBeer() {
         BeerDTO beerDto = serviceImpl.beers().getFirst();
 
+        given(service.updateById(any(), any())).willReturn(Optional.of(beerDto));
+
         performAndExpect(
                 put(PATH_ID, beerDto.getId()).contentType(APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(beerDto)),
@@ -151,16 +153,16 @@ class BeerControllerTest {
                 status().isNoContent()
         );
 
-        verify(service).patchBeerById(uuidArgumentCaptor.capture(), beerArgumentCaptor.capture());
+        verify(service).patchById(uuidArgumentCaptor.capture(), beerArgumentCaptor.capture());
 
         assertThat(beerDto.getId()).isEqualTo(uuidArgumentCaptor.getValue());
         assertThat(beerMap.get("name")).isEqualTo(beerArgumentCaptor.getValue().getName());
     }
 
     @Test
-    void getBeerByIdNotFound() {
+    void findBeerByIdNotFound() {
 
-        given(service.findBeerById(any())).willReturn(Optional.empty());
+        given(service.findById(any())).willReturn(Optional.empty());
         performAndExpect(
                 get(PATH_ID, UUID.randomUUID()),
 

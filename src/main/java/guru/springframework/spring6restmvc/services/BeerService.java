@@ -7,15 +7,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface BeerService {
-    Optional<BeerDTO> findBeerById(UUID id);
-
     List<BeerDTO> beers();
+
+    Optional<BeerDTO> findById(UUID id);
 
     BeerDTO saveNewBeer(BeerDTO beerDto);
 
-    void updateById(UUID id, BeerDTO beerDto);
+    Optional<BeerDTO> updateById(UUID id, BeerDTO beerDto);
 
-    void deleteById(UUID id);
+    BeerDTO deleteById(UUID id);
 
-    void patchBeerById(UUID id, BeerDTO beerDto);
+    Optional<BeerDTO> patchById(UUID id, BeerDTO beerDto);
 }

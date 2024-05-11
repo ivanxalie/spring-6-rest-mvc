@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -25,7 +26,7 @@ public class CustomerController {
     }
 
     @GetMapping(ID)
-    public CustomerDTO getById(@PathVariable("customerId") UUID id) {
+    public CustomerDTO findById(@PathVariable("customerId") UUID id) {
         return service.findById(id).orElseThrow(NotFountException::new);
     }
 
@@ -43,7 +44,9 @@ public class CustomerController {
 
     @DeleteMapping(ID)
     public ResponseEntity<?> deleteById(@PathVariable("customerId") UUID id) {
-        service.deleteById(id);
+        Optional<CustomerDTO> deleted = service.deleteById(id);
+        if (deleted.isEmpty())
+            throw new NotFountException();
         return ResponseEntity.noContent().build();
     }
 

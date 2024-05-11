@@ -61,7 +61,7 @@ public class BeerServiceImpl implements BeerService {
     }
 
     @Override
-    public Optional<BeerDTO> findBeerById(UUID id) {
+    public Optional<BeerDTO> findById(UUID id) {
         log.debug("Get Beer by Id - in service. Id: {}", id);
         return Optional.of(beers.get(id));
     }
@@ -83,7 +83,7 @@ public class BeerServiceImpl implements BeerService {
     }
 
     @Override
-    public void updateById(UUID id, BeerDTO beerDto) {
+    public Optional<BeerDTO> updateById(UUID id, BeerDTO beerDto) {
         BeerDTO beerDTOToUpdate = beers.get(id);
         if (beerDTOToUpdate != null) {
             beerDTOToUpdate.setName(beerDto.getName());
@@ -94,15 +94,16 @@ public class BeerServiceImpl implements BeerService {
             beerDTOToUpdate.setUpdateDate(now());
             beerDTOToUpdate.setVersion(beerDTOToUpdate.getVersion() + 1);
         }
+        return Optional.ofNullable(beerDTOToUpdate);
     }
 
     @Override
-    public void deleteById(UUID id) {
-        beers.remove(id);
+    public BeerDTO deleteById(UUID id) {
+        return beers.remove(id);
     }
 
     @Override
-    public void patchBeerById(UUID id, BeerDTO beerDto) {
+    public Optional<BeerDTO> patchById(UUID id, BeerDTO beerDto) {
         BeerDTO saved = beers.get(id);
 
         if (saved != null) {
@@ -121,5 +122,6 @@ public class BeerServiceImpl implements BeerService {
             if (StringUtils.hasText(beerDto.getUpc()))
                 saved.setUpc(beerDto.getUpc());
         }
+        return Optional.ofNullable(saved);
     }
 }

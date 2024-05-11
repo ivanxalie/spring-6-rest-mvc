@@ -124,6 +124,8 @@ class CustomerControllerTest {
     void deleteCustomer() {
         UUID id = UUID.randomUUID();
 
+        given(customerService.deleteById(any())).willReturn(Optional.ofNullable(serviceImpl.customers().getFirst()));
+
         performAndExpect(
                 delete(PATH_ID, id),
                 status().isNoContent()
@@ -153,7 +155,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    void getByIdIfNotFound() {
+    void findByIdIfNotFound() {
         given(customerService.findById(any())).willReturn(Optional.empty());
 
         performAndExpect(

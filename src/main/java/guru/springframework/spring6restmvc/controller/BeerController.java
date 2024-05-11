@@ -22,9 +22,9 @@ public class BeerController {
     private final BeerService service;
 
     @GetMapping(ID)
-    public BeerDTO getBeerById(@PathVariable("beerId") UUID id) {
+    public BeerDTO findBeerById(@PathVariable("beerId") UUID id) {
         log.debug("Get Beer by Id - in controller. Id: {}", id);
-        return service.findBeerById(id).orElseThrow(NotFountException::new);
+        return service.findById(id).orElseThrow(NotFountException::new);
     }
 
     @GetMapping
@@ -40,7 +40,8 @@ public class BeerController {
 
     @PutMapping(ID)
     public ResponseEntity<?> updateById(@PathVariable("beerId") UUID id, @RequestBody BeerDTO beerDto) {
-        service.updateById(id, beerDto);
+        if (service.updateById(id, beerDto).isEmpty())
+            throw new NotFountException();
         return ResponseEntity.noContent().build();
     }
 
@@ -52,7 +53,7 @@ public class BeerController {
 
     @PatchMapping(ID)
     public ResponseEntity<?> updateBeerPatchById(@PathVariable("beerId") UUID id, @RequestBody BeerDTO beerDto) {
-        service.patchBeerById(id, beerDto);
+        service.patchById(id, beerDto);
         return ResponseEntity.noContent().build();
     }
 }
