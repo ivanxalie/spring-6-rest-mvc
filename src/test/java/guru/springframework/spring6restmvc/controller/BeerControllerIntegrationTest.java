@@ -1,25 +1,31 @@
 package guru.springframework.spring6restmvc.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.spring6restmvc.entities.Beer;
 import guru.springframework.spring6restmvc.mappers.BeerMapper;
 import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.repositories.BeerRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.Rollback;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @Transactional
@@ -33,6 +39,21 @@ class BeerControllerIntegrationTest {
 
     @Autowired
     private BeerMapper mapper;
+
+    @Autowired
+    private WebApplicationContext context;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .build();
+    }
 
     @Test
     void beers() {
@@ -71,6 +92,9 @@ class BeerControllerIntegrationTest {
 
         ResponseEntity<BeerDTO> entity = controller.addNewBeer(BeerDTO.builder()
                 .name("Buh-lo")
+                .upc("12312")
+                .beerStyle(BeerStyle.WHEAT)
+                .price(BigDecimal.ONE)
                 .build());
 
         assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -134,7 +158,20 @@ class BeerControllerIntegrationTest {
     @Test
     void deleteByIdNotFound() {
         repository.deleteAll();
-
         assertThrows(NotFountException.class, () -> controller.deleteById(UUID.randomUUID()));
+    }
+
+    @Test
+    void testPatchBeerBadName() throws Exception {
+        Beer beer = repository.findAll().getFirst();
+
+        Map<String, Object> beerMap = Collections.singletonMap("name", "New Name".repeat(500));
+
+        mockMvc.perform(
+                        patch(BeerController.PATH_ID, beer.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsBytes(beerMap))
+                )
+                .andExpect(status().isBadRequest());
     }
 }

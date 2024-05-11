@@ -2,6 +2,7 @@ package guru.springframework.spring6restmvc.controller;
 
 import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.services.BeerService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -33,13 +34,13 @@ public class BeerController {
     }
 
     @PostMapping
-    public ResponseEntity<BeerDTO> addNewBeer(@RequestBody BeerDTO beerDto) {
+    public ResponseEntity<BeerDTO> addNewBeer(@Valid @RequestBody BeerDTO beerDto) {
         BeerDTO newBeerDTO = service.saveNewBeer(beerDto);
         return ResponseEntity.created(URI.create("http://localhost:8080/api/v1/beer/" + newBeerDTO.getId())).body(newBeerDTO);
     }
 
     @PutMapping(ID)
-    public ResponseEntity<?> updateById(@PathVariable("beerId") UUID id, @RequestBody BeerDTO beerDto) {
+    public ResponseEntity<?> updateById(@PathVariable("beerId") UUID id, @Valid @RequestBody BeerDTO beerDto) {
         if (service.updateById(id, beerDto).isEmpty())
             throw new NotFountException();
         return ResponseEntity.noContent().build();
@@ -52,7 +53,7 @@ public class BeerController {
     }
 
     @PatchMapping(ID)
-    public ResponseEntity<?> updateBeerPatchById(@PathVariable("beerId") UUID id, @RequestBody BeerDTO beerDto) {
+    public ResponseEntity<?> updateBeerPatchById(@PathVariable("beerId") UUID id, @Valid @RequestBody BeerDTO beerDto) {
         service.patchById(id, beerDto);
         return ResponseEntity.noContent().build();
     }

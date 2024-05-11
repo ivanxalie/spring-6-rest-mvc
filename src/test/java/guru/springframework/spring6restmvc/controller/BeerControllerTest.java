@@ -2,6 +2,7 @@ package guru.springframework.spring6restmvc.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.spring6restmvc.model.BeerDTO;
+import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.services.BeerService;
 import guru.springframework.spring6restmvc.services.BeerServiceImpl;
 import lombok.SneakyThrows;
@@ -12,11 +13,9 @@ import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.test.web.servlet.*;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 import static guru.springframework.spring6restmvc.controller.BeerController.PATH;
@@ -72,9 +71,10 @@ class BeerControllerTest {
     }
 
     @SneakyThrows
-    private void performAndExpect(RequestBuilder perform, ResultMatcher... expect) {
+    private MvcResult performAndExpect(RequestBuilder perform, ResultMatcher... expect) {
         ResultActions resultActions = mockMvc.perform(perform);
         for (ResultMatcher matcher : expect) resultActions.andExpect(matcher);
+        return resultActions.andReturn();
     }
 
     @Test
@@ -126,6 +126,23 @@ class BeerControllerTest {
     }
 
     @Test
+    @SneakyThrows
+    void updateBeerBlankName() {
+        BeerDTO beerDto = serviceImpl.beers().getFirst();
+        beerDto.setName("");
+
+        given(service.updateById(any(), any())).willReturn(Optional.of(beerDto));
+
+        performAndExpect(
+                put(PATH_ID, beerDto.getId()).contentType(APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(beerDto)),
+
+                status().isBadRequest(),
+                jsonPath("$.length()", is(1))
+        );
+    }
+
+    @Test
     void deleteBeer() {
         UUID id = UUID.randomUUID();
 
@@ -144,6 +161,9 @@ class BeerControllerTest {
 
         Map<String, Object> beerMap = new HashMap<>();
         beerMap.put("name", "New Beer");
+        beerMap.put("beerStyle", BeerStyle.WHEAT);
+        beerMap.put("upc", 123123);
+        beerMap.put("price", BigDecimal.valueOf(100));
 
         performAndExpect(
                 patch(PATH_ID, beerDto.getId())
@@ -168,5 +188,25 @@ class BeerControllerTest {
 
                 status().isNotFound()
         );
+    }
+
+    @Test
+    void addBeerNullProperties() throws Exception {
+        BeerDTO beerDTO = BeerDTO.builder()
+                .name("")
+                .upc("")
+                .build();
+
+        given(service.saveNewBeer(any())).willReturn(beerDTO);
+
+        MvcResult result = performAndExpect(
+                post(PATH)
+                        .contentType(APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(beerDTO)),
+
+                status().isBadRequest(),
+                jsonPath("$.length()", is(4))
+        );
+        System.out.println(result.getResponse().getContentAsString());
     }
 }
