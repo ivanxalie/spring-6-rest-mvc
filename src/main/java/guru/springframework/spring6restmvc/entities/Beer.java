@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.math.BigDecimal;
@@ -22,7 +24,8 @@ public class Beer {
 
     @Id
     @GeneratedValue
-    @Column(nullable = false, updatable = false, length = 36, columnDefinition = "varchar")
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(nullable = false, updatable = false, length = 36, columnDefinition = "varchar(36)")
     private UUID id;
 
     @Version
