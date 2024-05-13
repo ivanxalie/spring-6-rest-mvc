@@ -1,3 +1,6 @@
 logging:
   level:
     guru.springframework: debug
+spring:
+  flyway:
+    enabled: false
