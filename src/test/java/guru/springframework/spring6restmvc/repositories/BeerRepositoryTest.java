@@ -4,6 +4,7 @@ import guru.springframework.spring6restmvc.bootstrap.BootstrapData;
 import guru.springframework.spring6restmvc.entities.Beer;
 import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.services.BeerCsvService;
+import guru.springframework.spring6restmvc.services.BeerCsvServiceImpl;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,8 +13,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,8 +32,7 @@ class BeerRepositoryTest {
     @MockBean
     private CustomerRepository customerRepository;
 
-    @MockBean
-    private BeerCsvService csvService;
+    private BeerCsvService csvService = new BeerCsvServiceImpl();
 
     private BootstrapData data;
 
@@ -43,7 +45,7 @@ class BeerRepositoryTest {
 
     @Test
     void testInit() {
-        assertThat(beerRepository.count()).isEqualTo(3);
+        assertThat(beerRepository.count()).isEqualTo(2413);
     }
 
     @Test
@@ -73,5 +75,19 @@ class BeerRepositoryTest {
 
             beerRepository.flush();
         });
+    }
+
+    @Test
+    void getListByName() {
+        Page<Beer> beers = beerRepository.findAllByNameIsLikeIgnoreCase("%IPA%", null);
+
+        assertThat(beers.getTotalElements()).isEqualTo(336);
+    }
+
+    @Test
+    void getListByStyle() {
+        Page<Beer> beers = beerRepository.findAllByBeerStyle(BeerStyle.WHEAT, null);
+
+        assertThat(beers.getTotalElements()).isEqualTo(75);
     }
 }

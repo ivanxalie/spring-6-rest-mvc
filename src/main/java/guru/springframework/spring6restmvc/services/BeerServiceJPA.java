@@ -4,13 +4,17 @@ import guru.springframework.spring6restmvc.controller.NotFountException;
 import guru.springframework.spring6restmvc.entities.Beer;
 import guru.springframework.spring6restmvc.mappers.BeerMapper;
 import guru.springframework.spring6restmvc.model.BeerDTO;
+import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.repositories.BeerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,12 +22,53 @@ import java.util.UUID;
 @Primary
 @RequiredArgsConstructor
 public class BeerServiceJPA implements BeerService {
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_PAGE_SIZE = 25;
+    private static final int DEFAULT_PAGE_SIZE_LIMIT = 1000;
     private final BeerRepository repository;
     private final BeerMapper mapper;
 
     @Override
-    public List<BeerDTO> beers() {
-        return repository.findAll().stream().map(mapper::toBeerDto).toList();
+    @Cacheable("beers")
+    public Page<BeerDTO> beers(String name, BeerStyle style, Boolean showInventory,
+                               Integer pageNumber, Integer pageSize) {
+        PageRequest pageRequest = buildPageRequest(pageNumber, pageSize);
+
+
+        Page<Beer> beers = Page.empty();
+
+        if (!StringUtils.hasText(name) && style == null)
+            beers = repository.findAll(pageRequest);
+        else {
+            if (StringUtils.hasText(name) && style != null) {
+                beers = repository.findAllByNameIsLikeIgnoreCaseAndBeerStyle(wrapName(name), style, pageRequest);
+            } else if (StringUtils.hasText(name))
+                beers = repository.findAllByNameIsLikeIgnoreCase(wrapName(name), pageRequest);
+            else if (style != null)
+                beers = repository.findAllByBeerStyle(style, pageRequest);
+        }
+
+        if (Boolean.FALSE.equals(showInventory))
+            beers.stream().forEach(beer -> beer.setQuantityOnHand(null));
+
+        return beers
+                .map(mapper::toBeerDto);
+    }
+
+    public PageRequest buildPageRequest(Integer pageNumber, Integer pageSize) {
+        if (pageNumber == null) pageNumber = DEFAULT_PAGE;
+        else if (pageNumber > 0) pageNumber--;
+
+        if (pageSize == null) pageSize = DEFAULT_PAGE_SIZE;
+        else if (pageSize > DEFAULT_PAGE_SIZE_LIMIT) pageSize = DEFAULT_PAGE_SIZE_LIMIT;
+
+        Sort sort = Sort.by(Sort.Order.asc("name"));
+
+        return PageRequest.of(pageNumber, pageSize, sort);
+    }
+
+    private String wrapName(String name) {
+        return "%" + name + "%";
     }
 
     @Override

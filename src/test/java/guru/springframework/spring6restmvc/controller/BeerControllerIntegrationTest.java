@@ -6,10 +6,12 @@ import guru.springframework.spring6restmvc.mappers.BeerMapper;
 import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.repositories.BeerRepository;
+import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +24,13 @@ import org.springframework.web.context.WebApplicationContext;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static guru.springframework.spring6restmvc.controller.BeerController.PATH;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -57,17 +63,17 @@ class BeerControllerIntegrationTest {
 
     @Test
     void beers() {
-        List<BeerDTO> beers = controller.beers();
+        Page<BeerDTO> beers = controller.beers(null, null, false, 1, 25);
 
-        assertThat(beers.size()).isEqualTo(2413);
+        assertThat(beers.getTotalElements()).isEqualTo(2413);
     }
 
     @Test
     void emptyBeers() {
         repository.deleteAll();
-        List<BeerDTO> beers = controller.beers();
+        Page<BeerDTO> beers = controller.beers(null, null, false, 1, 25);
 
-        assertThat(beers.size()).isEqualTo(0);
+        assertThat(beers.getTotalElements()).isEqualTo(0);
     }
 
     @Test
@@ -173,5 +179,71 @@ class BeerControllerIntegrationTest {
                                 .content(objectMapper.writeValueAsBytes(beerMap))
                 )
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testListBeersByName() throws Exception {
+        mockMvc.perform(get(PATH).queryParam("name", "%IPA%"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements", is(336)));
+    }
+
+    @Test
+    void testListBeersByBeerStyle() throws Exception {
+        mockMvc.perform(get(PATH).queryParam("beerStyle", BeerStyle.PORTER.name()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements", is(68)));
+    }
+
+    @Test
+    void testListBeersByStyleAndNameShowInventoryTrue() throws Exception {
+        mockMvc.perform(
+                        get(PATH)
+                                .queryParam("name", "IPA")
+                                .queryParam("beerStyle", BeerStyle.IPA.name())
+                                .queryParam("showInventory", "true")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements", is(310)))
+                .andExpect(jsonPath("$.content[0].quantityOnHand").value(IsNull.notNullValue()));
+    }
+
+    @Test
+    void testListBeersByStyleAndNameShowInventoryFalse() throws Exception {
+        mockMvc.perform(
+                        get(PATH)
+                                .queryParam("name", "IPA")
+                                .queryParam("beerStyle", BeerStyle.IPA.name())
+                                .queryParam("showInventory", "false")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements", is(310)))
+                .andExpect(jsonPath("$.content[0].quantityOnHand").value(IsNull.nullValue()));
+    }
+
+    @Test
+    void testListBeersByStyleAndName() throws Exception {
+        mockMvc.perform(
+                        get(PATH)
+                                .queryParam("name", "IPA")
+                                .queryParam("beerStyle", BeerStyle.IPA.name())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements", is(310)));
+    }
+
+    @Test
+    void testListBeerByStyleAndNameShowInventoryTruePage1() throws Exception {
+        mockMvc.perform(
+                        get(PATH)
+                                .queryParam("name", "IPA")
+                                .queryParam("beerStyle", BeerStyle.IPA.name())
+                                .queryParam("showInventory", "true")
+                                .queryParam("pageNumber", "2")
+                                .queryParam("pageSize", "50")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.size", is(50)))
+                .andExpect(jsonPath("$.content[0].quantityOnHand").value(IsNull.notNullValue()));
     }
 }

@@ -2,6 +2,7 @@ logging:
   level:
     guru.springframework: debug
     org.hibernate.orm.jdbc.bind: trace
+    org.hibernate.SQL: debug
 spring:
   flyway:
     enabled: true

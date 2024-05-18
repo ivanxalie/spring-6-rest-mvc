@@ -13,10 +13,14 @@ import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
 import org.springframework.test.web.servlet.*;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import static guru.springframework.spring6restmvc.controller.BeerController.PATH;
 import static guru.springframework.spring6restmvc.controller.BeerController.PATH_ID;
@@ -53,7 +57,8 @@ class BeerControllerTest {
     @BeforeEach
     void setUp() {
         serviceImpl = new BeerServiceImpl();
-        beerDto = serviceImpl.beers().getFirst();
+        beerDto = serviceImpl.beers(null, null, false, 1, 25).getContent()
+                .getFirst();
     }
 
     @Test
@@ -79,26 +84,28 @@ class BeerControllerTest {
 
     @Test
     void beers() {
-        List<BeerDTO> beerDTOS = serviceImpl.beers();
-        given(service.beers()).willReturn(beerDTOS);
+        Page<BeerDTO> beerDTOS = serviceImpl.beers(null, null, null, 1, 25);
+        given(service.beers(any(), any(), any(), any(), any())).willReturn(beerDTOS);
 
         performAndExpect(
                 get(PATH).accept(APPLICATION_JSON),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
-                jsonPath("$.length()", is(beerDTOS.size()))
+                jsonPath("$.page.size", is(3))
         );
     }
 
     @Test
     @SneakyThrows
     void saveNewBeer() {
-        BeerDTO beerDto = serviceImpl.beers().getFirst();
+        BeerDTO beerDto = serviceImpl.beers(null, null, false, 1, 25)
+                .getContent().getFirst();
         beerDto.setVersion(null);
         beerDto.setId(null);
 
-        given(service.saveNewBeer(any(BeerDTO.class))).willReturn(serviceImpl.beers().get(1));
+        given(service.saveNewBeer(any(BeerDTO.class))).willReturn(serviceImpl.beers(null, null,
+                false, 1, 25).getContent().getFirst());
 
         performAndExpect(
                 post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(beerDto)),
@@ -111,7 +118,8 @@ class BeerControllerTest {
     @Test
     @SneakyThrows
     void updateBeer() {
-        BeerDTO beerDto = serviceImpl.beers().getFirst();
+        BeerDTO beerDto = serviceImpl.beers(null, null, false, 1, 25)
+                .getContent().getFirst();
 
         given(service.updateById(any(), any())).willReturn(Optional.of(beerDto));
 
@@ -128,7 +136,8 @@ class BeerControllerTest {
     @Test
     @SneakyThrows
     void updateBeerBlankName() {
-        BeerDTO beerDto = serviceImpl.beers().getFirst();
+        BeerDTO beerDto = serviceImpl.beers(null, null, false, 1, 25)
+                .getContent().getFirst();
         beerDto.setName("");
 
         given(service.updateById(any(), any())).willReturn(Optional.of(beerDto));
@@ -157,7 +166,8 @@ class BeerControllerTest {
 
     @Test
     void patchBeer() throws Exception {
-        BeerDTO beerDto = serviceImpl.beers().getFirst();
+        BeerDTO beerDto = serviceImpl.beers(null, null, false, 1, 25)
+                .getContent().getFirst();
 
         Map<String, Object> beerMap = new HashMap<>();
         beerMap.put("name", "New Beer");

@@ -1,15 +1,16 @@
 package guru.springframework.spring6restmvc.controller;
 
 import guru.springframework.spring6restmvc.model.BeerDTO;
+import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.services.BeerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,8 +30,13 @@ public class BeerController {
     }
 
     @GetMapping
-    public List<BeerDTO> beers() {
-        return service.beers();
+    public Page<BeerDTO> beers(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "beerStyle", required = false) BeerStyle style,
+            @RequestParam(value = "showInventory", required = false) Boolean showInventory,
+            @RequestParam(value = "pageNumber", required = false) Integer pageNumber,
+            @RequestParam(value = "pageSize", required = false) Integer pageSize) {
+        return service.beers(name, style, showInventory, pageNumber, pageSize);
     }
 
     @PostMapping
