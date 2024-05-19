@@ -44,8 +44,11 @@ public class BeerOrder {
     @Builder.Default
     private Set<BeerOrderLine> orderLines = new HashSet<>();
 
+    @OneToOne
+    private BeerOrderShipment beerOrderShipment;
+
     public BeerOrder(UUID id, Integer version, Timestamp createdDate, Timestamp lastModifiedDate, String customerRef,
-                     Customer customer, Set<BeerOrderLine> orderLines) {
+                     Customer customer, Set<BeerOrderLine> orderLines, BeerOrderShipment beerOrderShipment) {
         this.id = id;
         this.version = version;
         this.createdDate = createdDate;
@@ -53,6 +56,7 @@ public class BeerOrder {
         this.customerRef = customerRef;
         setCustomer(customer);
         this.orderLines = orderLines;
+        this.beerOrderShipment = beerOrderShipment;
     }
 
     public boolean isNew() {
