@@ -44,7 +44,7 @@ public class BeerOrder {
     @Builder.Default
     private Set<BeerOrderLine> orderLines = new HashSet<>();
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.PERSIST)
     private BeerOrderShipment beerOrderShipment;
 
     public BeerOrder(UUID id, Integer version, Timestamp createdDate, Timestamp lastModifiedDate, String customerRef,
@@ -56,7 +56,7 @@ public class BeerOrder {
         this.customerRef = customerRef;
         setCustomer(customer);
         this.orderLines = orderLines;
-        this.beerOrderShipment = beerOrderShipment;
+        setBeerOrderShipment(beerOrderShipment);
     }
 
     public boolean isNew() {
@@ -67,6 +67,13 @@ public class BeerOrder {
         if (customer != null) {
             this.customer = customer;
             customer.getOrders().add(this);
+        }
+    }
+
+    public void setBeerOrderShipment(BeerOrderShipment beerOrderShipment) {
+        if (beerOrderShipment != null) {
+            this.beerOrderShipment = beerOrderShipment;
+            beerOrderShipment.setBeerOrder(this);
         }
     }
 }
