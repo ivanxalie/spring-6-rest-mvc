@@ -1,6 +1,7 @@
 package guru.springframework.spring6restmvc.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import guru.springframework.spring6restmvc.configs.SpringSecurityConfig;
 import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.services.BeerService;
@@ -11,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.test.web.servlet.*;
 
@@ -30,10 +33,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(BeerController.class)
+@Import(SpringSecurityConfig.class)
 class BeerControllerTest {
 
     private BeerService serviceImpl;
@@ -54,6 +59,12 @@ class BeerControllerTest {
     @Captor
     private ArgumentCaptor<BeerDTO> beerArgumentCaptor;
 
+    @Value("${spring.security.user.name}")
+    private String username;
+
+    @Value("${spring.security.user.password}")
+    private String password;
+
     @BeforeEach
     void setUp() {
         serviceImpl = new BeerServiceImpl();
@@ -66,7 +77,9 @@ class BeerControllerTest {
         given(service.findById(beerDto.getId())).willReturn(Optional.of(beerDto));
 
         performAndExpect(
-                get(PATH_ID, beerDto.getId()).accept(APPLICATION_JSON),
+                get(PATH_ID, beerDto.getId())
+                        .accept(APPLICATION_JSON)
+                        .with(httpBasic(username, password)),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
@@ -88,7 +101,7 @@ class BeerControllerTest {
         given(service.beers(any(), any(), any(), any(), any())).willReturn(beerDTOS);
 
         performAndExpect(
-                get(PATH).accept(APPLICATION_JSON),
+                get(PATH).accept(APPLICATION_JSON).with(httpBasic(username, password)),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
@@ -108,7 +121,8 @@ class BeerControllerTest {
                 false, 1, 25).getContent().getFirst());
 
         performAndExpect(
-                post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(beerDto)),
+                post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(beerDto))
+                        .with(httpBasic(username, password)),
 
                 status().isCreated(),
                 header().exists("Location")
@@ -125,7 +139,7 @@ class BeerControllerTest {
 
         performAndExpect(
                 put(PATH_ID, beerDto.getId()).contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(beerDto)),
+                        .content(mapper.writeValueAsBytes(beerDto)).with(httpBasic(username, password)),
 
                 status().isNoContent()
         );
@@ -144,7 +158,7 @@ class BeerControllerTest {
 
         performAndExpect(
                 put(PATH_ID, beerDto.getId()).contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(beerDto)),
+                        .content(mapper.writeValueAsBytes(beerDto)).with(httpBasic(username, password)),
 
                 status().isBadRequest(),
                 jsonPath("$.length()", is(1))
@@ -156,7 +170,7 @@ class BeerControllerTest {
         UUID id = UUID.randomUUID();
 
         performAndExpect(
-                delete(PATH_ID, id),
+                delete(PATH_ID, id).with(httpBasic(username, password)),
                 status().isNoContent()
         );
         verify(service).deleteById(uuidArgumentCaptor.capture());
@@ -178,7 +192,8 @@ class BeerControllerTest {
         performAndExpect(
                 patch(PATH_ID, beerDto.getId())
                         .contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(beerMap)),
+                        .content(mapper.writeValueAsBytes(beerMap))
+                        .with(httpBasic(username, password)),
 
                 status().isNoContent()
         );
@@ -194,7 +209,7 @@ class BeerControllerTest {
 
         given(service.findById(any())).willReturn(Optional.empty());
         performAndExpect(
-                get(PATH_ID, UUID.randomUUID()),
+                get(PATH_ID, UUID.randomUUID()).with(httpBasic(username, password)),
 
                 status().isNotFound()
         );
@@ -212,7 +227,8 @@ class BeerControllerTest {
         MvcResult result = performAndExpect(
                 post(PATH)
                         .contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(beerDTO)),
+                        .content(mapper.writeValueAsBytes(beerDTO))
+                        .with(httpBasic(username, password)),
 
                 status().isBadRequest(),
                 jsonPath("$.length()", is(4))

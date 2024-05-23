@@ -2,6 +2,7 @@ package guru.springframework.spring6restmvc.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import guru.springframework.spring6restmvc.configs.SpringSecurityConfig;
 import guru.springframework.spring6restmvc.model.CustomerDTO;
 import guru.springframework.spring6restmvc.services.CustomerService;
 import guru.springframework.spring6restmvc.services.CustomerServiceImpl;
@@ -11,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.ResultActions;
@@ -28,10 +31,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CustomerController.class)
+@Import(SpringSecurityConfig.class)
 class CustomerControllerTest {
     private CustomerService serviceImpl;
 
@@ -50,6 +55,12 @@ class CustomerControllerTest {
     @Captor
     private ArgumentCaptor<CustomerDTO> customerArgumentCaptor;
 
+    @Value("${spring.security.user.name}")
+    private String username;
+
+    @Value("${spring.security.user.password}")
+    private String password;
+
     @BeforeEach
     void setUp() {
         serviceImpl = new CustomerServiceImpl();
@@ -61,7 +72,8 @@ class CustomerControllerTest {
         given(customerService.customers()).willReturn(customerDTOS);
 
         performAndExpect(
-                get(PATH).accept(APPLICATION_JSON),
+                get(PATH).accept(APPLICATION_JSON)
+                        .with(httpBasic(username, password)),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
@@ -76,7 +88,8 @@ class CustomerControllerTest {
         given(customerService.findById(customerDTO.getId())).willReturn(Optional.of(customerDTO));
 
         performAndExpect(
-                get(PATH_ID, customerDTO.getId()).accept(APPLICATION_JSON),
+                get(PATH_ID, customerDTO.getId()).accept(APPLICATION_JSON)
+                        .with(httpBasic(username, password)),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
@@ -98,7 +111,8 @@ class CustomerControllerTest {
         given(customerService.saveNewCustomer(any())).willReturn(customerDTO);
 
         performAndExpect(
-                post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(customerDTO)),
+                post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(customerDTO))
+                        .with(httpBasic(username, password)),
 
                 status().isCreated(),
                 jsonPath("$.version", is(1)),
@@ -112,7 +126,8 @@ class CustomerControllerTest {
 
         performAndExpect(
                 put(PATH_ID, customerDTO.getId()).contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(customerDTO)),
+                        .content(mapper.writeValueAsBytes(customerDTO))
+                        .with(httpBasic(username, password)),
 
                 status().isNoContent()
         );
@@ -127,7 +142,7 @@ class CustomerControllerTest {
         given(customerService.deleteById(any())).willReturn(Optional.ofNullable(serviceImpl.customers().getFirst()));
 
         performAndExpect(
-                delete(PATH_ID, id),
+                delete(PATH_ID, id).with(httpBasic(username, password)),
                 status().isNoContent()
         );
 
@@ -143,7 +158,8 @@ class CustomerControllerTest {
         performAndExpect(
                 patch(PATH_ID, customerDTO.getId())
                         .contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(patch)),
+                        .content(mapper.writeValueAsBytes(patch))
+                        .with(httpBasic(username, password)),
 
                 status().isNoContent()
         );
@@ -159,7 +175,7 @@ class CustomerControllerTest {
         given(customerService.findById(any())).willReturn(Optional.empty());
 
         performAndExpect(
-                get(PATH_ID, UUID.randomUUID()),
+                get(PATH_ID, UUID.randomUUID()).with(httpBasic(username, password)),
 
                 status().isNotFound()
         );

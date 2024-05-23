@@ -1,6 +1,11 @@
 logging:
   level:
     guru.springframework: debug
+#    org.springframework.security: trace
 spring:
   flyway:
     enabled: false
+  security:
+    user:
+      name: user
+      password: password
