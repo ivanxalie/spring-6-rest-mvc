@@ -88,6 +88,18 @@ class BeerControllerTest {
         );
     }
 
+    @Test
+    void findBeerByIdSecurityViolation() {
+        given(service.findById(beerDto.getId())).willReturn(Optional.of(beerDto));
+
+        performAndExpect(
+                get(PATH_ID, beerDto.getId())
+                        .accept(APPLICATION_JSON),
+
+                status().isUnauthorized()
+        );
+    }
+
     @SneakyThrows
     private MvcResult performAndExpect(RequestBuilder perform, ResultMatcher... expect) {
         ResultActions resultActions = mockMvc.perform(perform);
