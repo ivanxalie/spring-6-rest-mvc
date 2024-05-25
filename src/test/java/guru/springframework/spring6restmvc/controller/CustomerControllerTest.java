@@ -30,7 +30,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -66,7 +65,7 @@ class CustomerControllerTest {
 
         performAndExpect(
                 get(PATH).accept(APPLICATION_JSON)
-                        .with(jwt()),
+                        .with(BeerControllerTest.processor),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
@@ -82,7 +81,7 @@ class CustomerControllerTest {
 
         performAndExpect(
                 get(PATH_ID, customerDTO.getId()).accept(APPLICATION_JSON)
-                        .with(jwt()),
+                        .with(BeerControllerTest.processor),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
@@ -105,7 +104,7 @@ class CustomerControllerTest {
 
         performAndExpect(
                 post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(customerDTO))
-                        .with(jwt()),
+                        .with(BeerControllerTest.processor),
 
                 status().isCreated(),
                 jsonPath("$.version", is(1)),
@@ -120,7 +119,7 @@ class CustomerControllerTest {
         performAndExpect(
                 put(PATH_ID, customerDTO.getId()).contentType(APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(customerDTO))
-                        .with(jwt()),
+                        .with(BeerControllerTest.processor),
 
                 status().isNoContent()
         );
@@ -135,7 +134,7 @@ class CustomerControllerTest {
         given(customerService.deleteById(any())).willReturn(Optional.ofNullable(serviceImpl.customers().getFirst()));
 
         performAndExpect(
-                delete(PATH_ID, id).with(jwt()),
+                delete(PATH_ID, id).with(BeerControllerTest.processor),
                 status().isNoContent()
         );
 
@@ -152,7 +151,7 @@ class CustomerControllerTest {
                 patch(PATH_ID, customerDTO.getId())
                         .contentType(APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(patch))
-                        .with(jwt()),
+                        .with(BeerControllerTest.processor),
 
                 status().isNoContent()
         );
@@ -168,7 +167,7 @@ class CustomerControllerTest {
         given(customerService.findById(any())).willReturn(Optional.empty());
 
         performAndExpect(
-                get(PATH_ID, UUID.randomUUID()).with(jwt()),
+                get(PATH_ID, UUID.randomUUID()).with(BeerControllerTest.processor),
 
                 status().isNotFound()
         );

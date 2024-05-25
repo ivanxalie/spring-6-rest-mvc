@@ -16,9 +16,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.*;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -40,21 +42,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SpringSecurityConfig.class)
 class BeerControllerTest {
 
+    public static final SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor processor =
+            jwt().jwt(jwt -> jwt.claims(claims -> {
+                        claims.put("scope", "message-read");
+                        claims.put("scope", "message-write");
+                    })
+                    .subject("messaging-client")
+                    .notBefore(Instant.now().minusSeconds(5L)));
     private BeerService serviceImpl;
     private BeerDTO beerDto;
-
     @MockBean
     private BeerService service;
-
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private ObjectMapper mapper;
-
     @Captor
     private ArgumentCaptor<UUID> uuidArgumentCaptor;
-
     @Captor
     private ArgumentCaptor<BeerDTO> beerArgumentCaptor;
 
@@ -72,7 +76,7 @@ class BeerControllerTest {
         performAndExpect(
                 get(PATH_ID, beerDto.getId())
                         .accept(APPLICATION_JSON)
-                        .with(jwt()),
+                        .with(processor),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
@@ -107,7 +111,7 @@ class BeerControllerTest {
 
         performAndExpect(
                 get(PATH).accept(APPLICATION_JSON)
-                        .with(jwt()),
+                        .with(processor),
 
                 status().isOk(),
                 content().contentType(APPLICATION_JSON),
@@ -128,7 +132,7 @@ class BeerControllerTest {
 
         performAndExpect(
                 post(PATH).contentType(APPLICATION_JSON).content(mapper.writeValueAsBytes(beerDto))
-                        .with(jwt()),
+                        .with(processor),
 
                 status().isCreated(),
                 header().exists("Location")
@@ -145,7 +149,7 @@ class BeerControllerTest {
 
         performAndExpect(
                 put(PATH_ID, beerDto.getId()).contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(beerDto)).with(jwt()),
+                        .content(mapper.writeValueAsBytes(beerDto)).with(processor),
 
                 status().isNoContent()
         );
@@ -164,7 +168,7 @@ class BeerControllerTest {
 
         performAndExpect(
                 put(PATH_ID, beerDto.getId()).contentType(APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(beerDto)).with(jwt()),
+                        .content(mapper.writeValueAsBytes(beerDto)).with(processor),
 
                 status().isBadRequest(),
                 jsonPath("$.length()", is(1))
@@ -176,7 +180,7 @@ class BeerControllerTest {
         UUID id = UUID.randomUUID();
 
         performAndExpect(
-                delete(PATH_ID, id).with(jwt()),
+                delete(PATH_ID, id).with(processor),
                 status().isNoContent()
         );
         verify(service).deleteById(uuidArgumentCaptor.capture());
@@ -199,7 +203,7 @@ class BeerControllerTest {
                 patch(PATH_ID, beerDto.getId())
                         .contentType(APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(beerMap))
-                        .with(jwt()),
+                        .with(processor),
 
                 status().isNoContent()
         );
@@ -215,7 +219,7 @@ class BeerControllerTest {
 
         given(service.findById(any())).willReturn(Optional.empty());
         performAndExpect(
-                get(PATH_ID, UUID.randomUUID()).with(jwt()),
+                get(PATH_ID, UUID.randomUUID()).with(processor),
 
                 status().isNotFound()
         );
@@ -234,7 +238,7 @@ class BeerControllerTest {
                 post(PATH)
                         .contentType(APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(beerDTO))
-                        .with(jwt()),
+                        .with(processor),
 
                 status().isBadRequest(),
                 jsonPath("$.length()", is(4))

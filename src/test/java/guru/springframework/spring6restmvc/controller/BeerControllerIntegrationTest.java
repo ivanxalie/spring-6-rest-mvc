@@ -31,7 +31,6 @@ import static guru.springframework.spring6restmvc.controller.BeerController.PATH
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -183,7 +182,7 @@ class BeerControllerIntegrationTest {
                         patch(BeerController.PATH_ID, beer.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsBytes(beerMap))
-                                .with(jwt())
+                                .with(BeerControllerTest.processor)
                 )
                 .andExpect(status().isBadRequest());
     }
@@ -191,7 +190,7 @@ class BeerControllerIntegrationTest {
     @Test
     void testListBeersByName() throws Exception {
         mockMvc.perform(get(PATH)
-                        .with(jwt())
+                        .with(BeerControllerTest.processor)
                         .queryParam("name", "%IPA%"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements", is(336)));
@@ -201,7 +200,7 @@ class BeerControllerIntegrationTest {
     void testListBeersByBeerStyle() throws Exception {
         mockMvc.perform(get(PATH)
                         .queryParam("beerStyle", BeerStyle.PORTER.name())
-                        .with(jwt()))
+                        .with(BeerControllerTest.processor))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements", is(68)));
     }
@@ -213,7 +212,7 @@ class BeerControllerIntegrationTest {
                                 .queryParam("name", "IPA")
                                 .queryParam("beerStyle", BeerStyle.IPA.name())
                                 .queryParam("showInventory", "true")
-                                .with(jwt())
+                                .with(BeerControllerTest.processor)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements", is(310)))
@@ -224,7 +223,7 @@ class BeerControllerIntegrationTest {
     void testListBeersByStyleAndNameShowInventoryFalse() throws Exception {
         mockMvc.perform(
                         get(PATH)
-                                .with(jwt())
+                                .with(BeerControllerTest.processor)
                                 .queryParam("name", "IPA")
                                 .queryParam("beerStyle", BeerStyle.IPA.name())
                                 .queryParam("showInventory", "false")
@@ -238,7 +237,7 @@ class BeerControllerIntegrationTest {
     void testListBeersByStyleAndName() throws Exception {
         mockMvc.perform(
                         get(PATH)
-                                .with(jwt())
+                                .with(BeerControllerTest.processor)
                                 .queryParam("name", "IPA")
                                 .queryParam("beerStyle", BeerStyle.IPA.name())
                 )
@@ -255,7 +254,7 @@ class BeerControllerIntegrationTest {
                                 .queryParam("showInventory", "true")
                                 .queryParam("pageNumber", "2")
                                 .queryParam("pageSize", "50")
-                                .with(jwt())
+                                .with(BeerControllerTest.processor)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.size", is(50)))
