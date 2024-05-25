@@ -6,6 +6,7 @@ spring:
   flyway:
     enabled: false
   security:
-    user:
-      name: user
-      password: password
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000
