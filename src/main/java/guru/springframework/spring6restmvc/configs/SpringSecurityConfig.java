@@ -15,7 +15,8 @@ public class SpringSecurityConfig {
         return security
                 .oauth2ResourceServer(httpSecurity -> httpSecurity.jwt(withDefaults()))
                 .authorizeHttpRequests(matcherRegistry -> matcherRegistry.requestMatchers(
-                                "/v3/api-docs**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                                "/v3/api-docs**", "/swagger-ui/**", "/swagger-ui.html")
+                        .permitAll()
                         .anyRequest().authenticated())
                 .build();
     }
