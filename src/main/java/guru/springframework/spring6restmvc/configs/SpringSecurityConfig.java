@@ -4,7 +4,6 @@ import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointR
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -14,24 +13,21 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @Configuration
 public class SpringSecurityConfig {
 
-    @Bean
-    @Order(2)
-    public SecurityFilterChain filterChain(HttpSecurity security) throws Exception {
-        return security
-                .oauth2ResourceServer(httpSecurity -> httpSecurity.jwt(withDefaults()))
-                .authorizeHttpRequests(matcherRegistry -> matcherRegistry.requestMatchers(
-                                "/v3/api-docs**", "/swagger-ui/**", "/swagger-ui.html")
-                        .permitAll()
-                        .anyRequest().authenticated())
-                .build();
-    }
 
     @Bean
-    @Order(1)
-    public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity security) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity security) throws Exception {
         return security
-                .authorizeHttpRequests(matcherRegistry -> matcherRegistry.requestMatchers(EndpointRequest.toAnyEndpoint())
-                        .permitAll())
+                .authorizeHttpRequests(matcherRegistry ->
+                        matcherRegistry
+                                .requestMatchers("/v3/api-docs**", "/swagger-ui/**", "/swagger-ui.html")
+                                .permitAll())
+                .authorizeHttpRequests(matcherRegistry ->
+                        matcherRegistry
+                                .requestMatchers(EndpointRequest.toAnyEndpoint())
+                                .permitAll())
+                .authorizeHttpRequests(matcherRegistry ->
+                        matcherRegistry.anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
                 .build();
     }
 }
