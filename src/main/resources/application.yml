@@ -3,6 +3,9 @@ logging:
     guru.springframework: debug
 #    org.springframework.security: trace
 spring:
+  threads:
+    virtual:
+      enabled: true
   flyway:
     enabled: false
   security:

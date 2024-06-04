@@ -49,6 +49,7 @@ class BeerControllerTest {
                     })
                     .subject("messaging-client")
                     .notBefore(Instant.now().minusSeconds(5L)));
+
     private BeerService serviceImpl;
     private BeerDTO beerDto;
     @MockBean
