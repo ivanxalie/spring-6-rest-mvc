@@ -2,6 +2,7 @@ package guru.springframework.spring6restmvc.services;
 
 import guru.springframework.spring6restmvc.controller.NotFountException;
 import guru.springframework.spring6restmvc.entities.Beer;
+import guru.springframework.spring6restmvc.events.BeerCreatedEvent;
 import guru.springframework.spring6restmvc.mappers.BeerMapper;
 import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.model.BeerStyle;
@@ -12,10 +13,13 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -35,6 +39,7 @@ public class BeerServiceJPA implements BeerService {
     private final BeerRepository repository;
     private final BeerMapper mapper;
     private final CacheManager cacheManager;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Cacheable(cacheNames = "beerListCache")
@@ -91,8 +96,13 @@ public class BeerServiceJPA implements BeerService {
             @CacheEvict(cacheNames = "beerListCache")
     })
     public BeerDTO saveNewBeer(BeerDTO beerDto) {
-        BeerDTO result = mapper.toBeerDto(repository.save(mapper.toBeer(beerDto)));
+        Beer beer = repository.save(mapper.toBeer(beerDto));
+        BeerDTO result = mapper.toBeerDto(beer);
         evict(result.getId());
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        eventPublisher.publishEvent(new BeerCreatedEvent(beer, authentication));
+
         return result;
     }
 

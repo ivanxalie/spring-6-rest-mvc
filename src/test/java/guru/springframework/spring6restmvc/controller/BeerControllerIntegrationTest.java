@@ -2,6 +2,7 @@ package guru.springframework.spring6restmvc.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.spring6restmvc.entities.Beer;
+import guru.springframework.spring6restmvc.events.BeerCreatedEvent;
 import guru.springframework.spring6restmvc.mappers.BeerMapper;
 import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.model.BeerStyle;
@@ -15,9 +16,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,36 +32,34 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static guru.springframework.spring6restmvc.controller.BeerController.PATH;
+import static guru.springframework.spring6restmvc.controller.BeerControllerTest.processor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @Transactional
 @Rollback
+@RecordApplicationEvents
 class BeerControllerIntegrationTest {
     @Autowired
+    ApplicationEvents applicationEvents;
+    @Autowired
     private BeerController controller;
-
     @Autowired
     private BeerRepository repository;
-
     @Autowired
     private BeerMapper mapper;
-
     @Autowired
     private WebApplicationContext context;
-
     @Autowired
     private ObjectMapper objectMapper;
-
     private MockMvc mockMvc;
-
     @MockBean
     private CacheManager manager;
 
@@ -106,12 +106,8 @@ class BeerControllerIntegrationTest {
     void addNewBeer() {
         long countBefore = repository.count();
 
-        ResponseEntity<BeerDTO> entity = controller.addNewBeer(BeerDTO.builder()
-                .name("Buh-lo")
-                .upc("12312")
-                .beerStyle(BeerStyle.WHEAT)
-                .price(BigDecimal.ONE)
-                .build());
+        BeerDTO beerToSave = createTestBeer();
+        ResponseEntity<BeerDTO> entity = controller.addNewBeer(beerToSave);
 
         assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(entity.getHeaders().getLocation()).isNotNull();
@@ -124,6 +120,15 @@ class BeerControllerIntegrationTest {
         Optional<Beer> beer = repository.findById(beerDTO.getId());
         assertThat(beer).isNotEmpty();
         assertThat(beer.get().getId()).isEqualTo(beerDTO.getId());
+    }
+
+    private BeerDTO createTestBeer() {
+        return BeerDTO.builder()
+                .name("Buh-lo")
+                .upc("12312")
+                .beerStyle(BeerStyle.WHEAT)
+                .price(BigDecimal.ONE)
+                .build();
     }
 
     @Test
@@ -185,9 +190,9 @@ class BeerControllerIntegrationTest {
 
         mockMvc.perform(
                         patch(BeerController.PATH_ID, beer.getId())
-                                .contentType(MediaType.APPLICATION_JSON)
+                                .contentType(APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsBytes(beerMap))
-                                .with(BeerControllerTest.processor)
+                                .with(processor)
                 )
                 .andExpect(status().isBadRequest());
     }
@@ -195,7 +200,7 @@ class BeerControllerIntegrationTest {
     @Test
     void testListBeersByName() throws Exception {
         mockMvc.perform(get(PATH)
-                        .with(BeerControllerTest.processor)
+                        .with(processor)
                         .queryParam("name", "%IPA%"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements", is(336)));
@@ -205,7 +210,7 @@ class BeerControllerIntegrationTest {
     void testListBeersByBeerStyle() throws Exception {
         mockMvc.perform(get(PATH)
                         .queryParam("beerStyle", BeerStyle.PORTER.name())
-                        .with(BeerControllerTest.processor))
+                        .with(processor))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements", is(68)));
     }
@@ -217,7 +222,7 @@ class BeerControllerIntegrationTest {
                                 .queryParam("name", "IPA")
                                 .queryParam("beerStyle", BeerStyle.IPA.name())
                                 .queryParam("showInventory", "true")
-                                .with(BeerControllerTest.processor)
+                                .with(processor)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements", is(310)))
@@ -228,7 +233,7 @@ class BeerControllerIntegrationTest {
     void testListBeersByStyleAndNameShowInventoryFalse() throws Exception {
         mockMvc.perform(
                         get(PATH)
-                                .with(BeerControllerTest.processor)
+                                .with(processor)
                                 .queryParam("name", "IPA")
                                 .queryParam("beerStyle", BeerStyle.IPA.name())
                                 .queryParam("showInventory", "false")
@@ -242,7 +247,7 @@ class BeerControllerIntegrationTest {
     void testListBeersByStyleAndName() throws Exception {
         mockMvc.perform(
                         get(PATH)
-                                .with(BeerControllerTest.processor)
+                                .with(processor)
                                 .queryParam("name", "IPA")
                                 .queryParam("beerStyle", BeerStyle.IPA.name())
                 )
@@ -259,10 +264,27 @@ class BeerControllerIntegrationTest {
                                 .queryParam("showInventory", "true")
                                 .queryParam("pageNumber", "2")
                                 .queryParam("pageSize", "50")
-                                .with(BeerControllerTest.processor)
+                                .with(processor)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.size", is(50)))
                 .andExpect(jsonPath("$.content[0].quantityOnHand").value(IsNull.notNullValue()));
+    }
+
+    @Test
+    void testAddBeerMVC() throws Exception {
+        BeerDTO testBeer = createTestBeer();
+
+        mockMvc.perform(
+                        post(PATH)
+                                .with(processor)
+                                .contentType(APPLICATION_JSON)
+                                .accept(APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(testBeer))
+
+                )
+                .andExpect(status().isCreated());
+
+        assertThat(applicationEvents.stream(BeerCreatedEvent.class).count()).isEqualTo(1);
     }
 }
