@@ -6,7 +6,9 @@ import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +29,9 @@ import static io.restassured.http.ContentType.JSON;
 public class BeerControllerRestAssuredTest {
     @LocalServerPort
     Integer localPort;
+
+    @MockBean
+    private CacheManager manager;
 
     OpenApiValidationFilter filter = new OpenApiValidationFilter(
             OpenApiInteractionValidator.createForSpecificationUrl("oa3.yml")

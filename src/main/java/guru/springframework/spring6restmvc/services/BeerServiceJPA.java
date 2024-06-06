@@ -7,7 +7,11 @@ import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.repositories.BeerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +22,8 @@ import org.springframework.util.StringUtils;
 import java.util.Optional;
 import java.util.UUID;
 
+import static java.util.Optional.ofNullable;
+
 @Service
 @Primary
 @RequiredArgsConstructor
@@ -25,11 +31,13 @@ public class BeerServiceJPA implements BeerService {
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_PAGE_SIZE = 25;
     private static final int DEFAULT_PAGE_SIZE_LIMIT = 1000;
+
     private final BeerRepository repository;
     private final BeerMapper mapper;
+    private final CacheManager cacheManager;
 
     @Override
-    @Cacheable("beers")
+    @Cacheable(cacheNames = "beerListCache")
     public Page<BeerDTO> beers(String name, BeerStyle style, Boolean showInventory,
                                Integer pageNumber, Integer pageSize) {
         PageRequest pageRequest = buildPageRequest(pageNumber, pageSize);
@@ -72,19 +80,40 @@ public class BeerServiceJPA implements BeerService {
     }
 
     @Override
+    @Cacheable(cacheNames = "beerCache", key = "#beerId")
     public Optional<BeerDTO> findById(UUID id) {
         return repository.findById(id).map(mapper::toBeerDto);
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "beerCache", key = "#beerId"),
+            @CacheEvict(cacheNames = "beerListCache")
+    })
     public BeerDTO saveNewBeer(BeerDTO beerDto) {
-        return mapper.toBeerDto(repository.save(mapper.toBeer(beerDto)));
+        BeerDTO result = mapper.toBeerDto(repository.save(mapper.toBeer(beerDto)));
+        evict(result.getId());
+        return result;
+    }
+
+    private void evict(UUID id) {
+        ofNullable(cacheManager.getCache("beerCache"))
+                .filter(cache -> id != null)
+                .ifPresent(cache -> cache.evict(id));
+
+        ofNullable(cacheManager.getCache("beerListCache"))
+                .ifPresent(Cache::clear);
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "beerCache", key = "#beerId"),
+            @CacheEvict(cacheNames = "beerListCache")
+    })
     public Optional<BeerDTO> updateById(UUID id, BeerDTO beerDto) {
         return repository.findById(id).map(beer -> {
             updateBeer(beer, beerDto);
+            evict(id);
             return mapper.toBeerDto(repository.save(beer));
         });
     }
@@ -99,16 +128,23 @@ public class BeerServiceJPA implements BeerService {
 
     @Override
     public BeerDTO deleteById(UUID id) {
+        evict(id);
         Optional<Beer> found = repository.findById(id);
         repository.delete(found.orElseThrow(NotFountException::new));
         return found.map(mapper::toBeerDto).orElseThrow();
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "beerCache", key = "#beerId"),
+            @CacheEvict(cacheNames = "beerListCache")
+    })
     public Optional<BeerDTO> patchById(UUID id, BeerDTO beerDto) {
         return repository.findById(id).map(beer -> {
             patchBeer(beer, beerDto);
-            return mapper.toBeerDto(repository.save(beer));
+            BeerDTO result = mapper.toBeerDto(repository.save(beer));
+            evict(result.getId());
+            return result;
         });
     }
 

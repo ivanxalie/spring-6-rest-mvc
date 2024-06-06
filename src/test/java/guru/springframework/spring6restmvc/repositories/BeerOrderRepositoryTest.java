@@ -10,6 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.cache.CacheManager;
 
 import java.util.UUID;
 
@@ -29,6 +31,9 @@ class BeerOrderRepositoryTest {
 
     private Customer customer;
     private Beer beer;
+
+    @MockBean
+    private CacheManager manager;
 
     @BeforeEach
     void setUp() {
