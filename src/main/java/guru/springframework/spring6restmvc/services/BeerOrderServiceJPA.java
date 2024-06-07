@@ -2,13 +2,17 @@ package guru.springframework.spring6restmvc.services;
 
 import guru.springframework.spring6restmvc.controller.NotFountException;
 import guru.springframework.spring6restmvc.entities.BeerOrder;
+import guru.springframework.spring6restmvc.events.BeerOrderCreatedEvent;
 import guru.springframework.spring6restmvc.mappers.BeerOrderMapper;
 import guru.springframework.spring6restmvc.model.BeerOrderDTO;
 import guru.springframework.spring6restmvc.repositories.BeerOrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -24,6 +28,7 @@ public class BeerOrderServiceJPA implements BeerOrderService {
 
     private final BeerOrderRepository repository;
     private final BeerOrderMapper mapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public Page<BeerOrderDTO> orders(Integer pageNumber, Integer pageSize) {
@@ -41,10 +46,6 @@ public class BeerOrderServiceJPA implements BeerOrderService {
         return PageRequest.of(pageNumber, pageSize);
     }
 
-    private String wrapName(String name) {
-        return "%" + name + "%";
-    }
-
     @Override
     public Optional<BeerOrderDTO> findById(UUID id) {
         return repository.findById(id).map(mapper::toBeerOrderDto);
@@ -53,6 +54,8 @@ public class BeerOrderServiceJPA implements BeerOrderService {
     @Override
     public BeerOrderDTO saveNewBeerOrder(BeerOrderDTO BeerOrderDTO) {
         BeerOrder beer = repository.save(mapper.toBeer(BeerOrderDTO));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        eventPublisher.publishEvent(new BeerOrderCreatedEvent(beer, authentication));
         return mapper.toBeerOrderDto(beer);
     }
 
