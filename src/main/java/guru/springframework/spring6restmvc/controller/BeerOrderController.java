@@ -29,7 +29,7 @@ public class BeerOrderController {
     }
 
     @GetMapping
-    public Page<BeerOrderDTO> beers(
+    public Page<BeerOrderDTO> orders(
             @RequestParam(value = "pageNumber", required = false) Integer pageNumber,
             @RequestParam(value = "pageSize", required = false) Integer pageSize) {
         return service.orders(pageNumber, pageSize);
