@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -39,9 +38,7 @@ public class BeerOrderServiceJPA implements BeerOrderService {
         if (pageSize == null) pageSize = DEFAULT_PAGE_SIZE;
         else if (pageSize > DEFAULT_PAGE_SIZE_LIMIT) pageSize = DEFAULT_PAGE_SIZE_LIMIT;
 
-        Sort sort = Sort.by(Sort.Order.asc("name"));
-
-        return PageRequest.of(pageNumber, pageSize, sort);
+        return PageRequest.of(pageNumber, pageSize);
     }
 
     private String wrapName(String name) {
