@@ -3,7 +3,10 @@ package guru.springframework.spring6restmvc.services;
 import guru.springframework.spring6restmvc.controller.NotFountException;
 import guru.springframework.spring6restmvc.entities.BeerOrder;
 import guru.springframework.spring6restmvc.events.BeerOrderCreatedEvent;
+import guru.springframework.spring6restmvc.mappers.BeerOrderLineMapper;
 import guru.springframework.spring6restmvc.mappers.BeerOrderMapper;
+import guru.springframework.spring6restmvc.mappers.BeerOrderShipmentMapper;
+import guru.springframework.spring6restmvc.mappers.CustomerMapper;
 import guru.springframework.spring6restmvc.model.BeerOrderDTO;
 import guru.springframework.spring6restmvc.repositories.BeerOrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Primary
@@ -28,6 +32,9 @@ public class BeerOrderServiceJPA implements BeerOrderService {
 
     private final BeerOrderRepository repository;
     private final BeerOrderMapper mapper;
+    private final CustomerMapper customerMapper;
+    private final BeerOrderShipmentMapper shipmentMapper;
+    private final BeerOrderLineMapper beerOrderLineMapper;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -68,9 +75,11 @@ public class BeerOrderServiceJPA implements BeerOrderService {
     }
 
     private void updateBeer(BeerOrder beer, BeerOrderDTO beerOrderDTO) {
-        beer.setCustomer(beerOrderDTO.getCustomer());
-        beer.setBeerOrderShipment(beerOrderDTO.getBeerOrderShipment());
-        beer.setOrderLines(beerOrderDTO.getOrderLines());
+        beer.setCustomer(customerMapper.toCustomer(beerOrderDTO.getCustomer()));
+        beer.setBeerOrderShipment(shipmentMapper.toShipment(beerOrderDTO.getBeerOrderShipment()));
+        beer.setOrderLines(beerOrderDTO.getOrderLines().stream()
+                .map(beerOrderLineMapper::toBeerOrderLine)
+                .collect(Collectors.toSet()));
     }
 
     @Override
