@@ -14,6 +14,5 @@ public class BeerOrderShipmentDTO {
     private Integer version;
     private Timestamp createdDate;
     private Timestamp lastModifiedDate;
-    private BeerOrderDTO beerOrder;
     private String trackingNumber;
 }
