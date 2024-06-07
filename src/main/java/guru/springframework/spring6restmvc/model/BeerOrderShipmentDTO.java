@@ -1,5 +1,6 @@
 package guru.springframework.spring6restmvc.model;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,5 +15,6 @@ public class BeerOrderShipmentDTO {
     private Integer version;
     private Timestamp createdDate;
     private Timestamp lastModifiedDate;
+    @NotBlank
     private String trackingNumber;
 }

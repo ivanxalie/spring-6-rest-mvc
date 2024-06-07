@@ -1,6 +1,7 @@
 package guru.springframework.spring6restmvc.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,7 +36,8 @@ public class BeerOrderLine {
     @UpdateTimestamp
     private Timestamp lastModifiedDate;
 
-    private Integer orderQuantity = 0;
+    @Min(value = 1, message = "Quantity on hand must be greater that 0")
+    private Integer orderQuantity = 1;
 
     private Integer quantityAllocated = 0;
 

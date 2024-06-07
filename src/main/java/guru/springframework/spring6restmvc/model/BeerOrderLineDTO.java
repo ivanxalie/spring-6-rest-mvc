@@ -1,5 +1,6 @@
 package guru.springframework.spring6restmvc.model;
 
+import jakarta.validation.constraints.Min;
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,6 +14,8 @@ public class BeerOrderLineDTO {
     private Integer version;
     private Timestamp createdDate;
     private Timestamp lastModifiedDate;
+
+    @Min(value = 1, message = "Quantity on hand must be greater that 0")
     private Integer orderQuantity;
     private Integer quantityAllocated;
     private BeerDTO beer;
