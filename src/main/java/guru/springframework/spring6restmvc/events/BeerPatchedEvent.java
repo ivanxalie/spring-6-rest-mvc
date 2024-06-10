@@ -9,8 +9,8 @@ import org.springframework.security.core.Authentication;
 @Builder
 @Getter
 @Setter
-public class BeerCreatedEvent extends BeerEvent {
-    public BeerCreatedEvent(Beer beer, Authentication authentication) {
+public class BeerPatchedEvent extends BeerEvent {
+    public BeerPatchedEvent(Beer beer, Authentication authentication) {
         super(beer, authentication);
     }
 }

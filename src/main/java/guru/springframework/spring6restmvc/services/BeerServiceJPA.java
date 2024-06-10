@@ -3,6 +3,9 @@ package guru.springframework.spring6restmvc.services;
 import guru.springframework.spring6restmvc.controller.NotFountException;
 import guru.springframework.spring6restmvc.entities.Beer;
 import guru.springframework.spring6restmvc.events.BeerCreatedEvent;
+import guru.springframework.spring6restmvc.events.BeerDeletedEvent;
+import guru.springframework.spring6restmvc.events.BeerPatchedEvent;
+import guru.springframework.spring6restmvc.events.BeerUpdatedEvent;
 import guru.springframework.spring6restmvc.mappers.BeerMapper;
 import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.model.BeerStyle;
@@ -34,6 +37,7 @@ public class BeerServiceJPA implements BeerService {
     private final BeerRepository repository;
     private final BeerMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
     @Override
     public Page<BeerDTO> beers(String name, BeerStyle style, Boolean showInventory,
@@ -87,7 +91,6 @@ public class BeerServiceJPA implements BeerService {
         Beer beer = repository.save(mapper.toBeer(beerDto));
         BeerDTO result = mapper.toBeerDto(beer);
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         eventPublisher.publishEvent(new BeerCreatedEvent(beer, authentication));
 
         return result;
@@ -97,6 +100,7 @@ public class BeerServiceJPA implements BeerService {
     public Optional<BeerDTO> updateById(UUID id, BeerDTO beerDto) {
         return repository.findById(id).map(beer -> {
             updateBeer(beer, beerDto);
+            eventPublisher.publishEvent(new BeerUpdatedEvent(beer, authentication));
             return mapper.toBeerDto(repository.save(beer));
         });
     }
@@ -113,6 +117,7 @@ public class BeerServiceJPA implements BeerService {
     public BeerDTO deleteById(UUID id) {
         Optional<Beer> found = repository.findById(id);
         repository.delete(found.orElseThrow(NotFountException::new));
+        eventPublisher.publishEvent(new BeerDeletedEvent(id, authentication));
         return found.map(mapper::toBeerDto).orElseThrow();
     }
 
@@ -124,6 +129,7 @@ public class BeerServiceJPA implements BeerService {
     public Optional<BeerDTO> patchById(UUID id, BeerDTO beerDto) {
         return repository.findById(id).map(beer -> {
             patchBeer(beer, beerDto);
+            eventPublisher.publishEvent(new BeerPatchedEvent(beer, authentication));
             return mapper.toBeerDto(repository.save(beer));
         });
     }

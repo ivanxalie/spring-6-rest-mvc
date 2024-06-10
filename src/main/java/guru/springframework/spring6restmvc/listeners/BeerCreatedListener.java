@@ -1,7 +1,7 @@
 package guru.springframework.spring6restmvc.listeners;
 
 import guru.springframework.spring6restmvc.entities.BeerAudit;
-import guru.springframework.spring6restmvc.events.BeerCreatedEvent;
+import guru.springframework.spring6restmvc.events.*;
 import guru.springframework.spring6restmvc.mappers.BeerMapper;
 import guru.springframework.spring6restmvc.repositories.BeerAuditRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,16 +21,52 @@ public class BeerCreatedListener {
 
     @EventListener
     @Async
-    public void listen(BeerCreatedEvent event) {
-        BeerAudit audit = mapper.toBeerAudit(event.getBeer());
-        audit.setAuditEventType("BEER_CREATED");
+    public void listenCreate(BeerCreatedEvent event) {
+        listenCommon(event, "BEER_CREATED");
+    }
 
-        Authentication authentication = event.getAuthentication();
-        if (authentication != null && StringUtils.hasText(authentication.getName()))
-            audit.setPrincipalName(authentication.getName());
+    private void listenCommon(BeerEvent event, String eventType) {
+        BeerAudit audit = mapper.toBeerAudit(event.getBeer());
+        audit.setAuditEventType(eventType);
+
+        fillAudit(event.getAuthentication(), audit);
 
         BeerAudit saved = repository.save(audit);
-        log.info("Saved audit event: {}", saved);
+        log(saved);
+    }
 
+    private void fillAudit(Authentication authentication, BeerAudit audit) {
+        if (authentication != null && StringUtils.hasText(authentication.getName()))
+            audit.setPrincipalName(authentication.getName());
+    }
+
+    private void log(BeerAudit saved) {
+        log.info("Saved audit event: {}", saved);
+    }
+
+    @EventListener
+    @Async
+    public void listenUpdate(BeerUpdatedEvent event) {
+        listenCommon(event, "BEER_UPDATED");
+    }
+
+    @EventListener
+    @Async
+    public void listenPatch(BeerPatchedEvent event) {
+        listenCommon(event, "BEER_PATCHED");
+    }
+
+    @EventListener
+    @Async
+    public void deletePatch(BeerDeletedEvent event) {
+        BeerAudit audit = BeerAudit.builder()
+                .id(event.getBeerId())
+                .build();
+        audit.setAuditEventType("BEER_DELETED");
+
+        fillAudit(event.getAuthentication(), audit);
+
+        BeerAudit saved = repository.save(audit);
+        log(saved);
     }
 }
