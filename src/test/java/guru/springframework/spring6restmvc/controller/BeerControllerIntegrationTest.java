@@ -3,6 +3,8 @@ package guru.springframework.spring6restmvc.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.spring6restmvc.entities.Beer;
 import guru.springframework.spring6restmvc.events.BeerCreatedEvent;
+import guru.springframework.spring6restmvc.events.BeerDeletedEvent;
+import guru.springframework.spring6restmvc.events.BeerUpdatedEvent;
 import guru.springframework.spring6restmvc.mappers.BeerMapper;
 import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.model.BeerStyle;
@@ -120,6 +122,8 @@ class BeerControllerIntegrationTest {
         Optional<Beer> beer = repository.findById(beerDTO.getId());
         assertThat(beer).isNotEmpty();
         assertThat(beer.get().getId()).isEqualTo(beerDTO.getId());
+
+        assertThat(applicationEvents.stream(BeerCreatedEvent.class).count()).isEqualTo(1);
     }
 
     private BeerDTO createTestBeer() {
@@ -152,6 +156,8 @@ class BeerControllerIntegrationTest {
         assertThat(beer.getBeerStyle()).isEqualTo(newStyle);
         assertThat(beer.getName()).isEqualTo(newName);
         assertThat(beer.getPrice()).isEqualTo(newPrice);
+
+        assertThat(applicationEvents.stream(BeerUpdatedEvent.class).count()).isEqualTo(1);
     }
 
     @Test
@@ -174,6 +180,8 @@ class BeerControllerIntegrationTest {
         assertThat(repository.count()).isEqualTo(beforeCount - 1);
 
         assertThat(repository.findById(first.getId())).isEmpty();
+
+        assertThat(applicationEvents.stream(BeerDeletedEvent.class).count()).isEqualTo(1);
     }
 
     @Test
