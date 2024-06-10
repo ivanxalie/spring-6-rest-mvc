@@ -15,7 +15,7 @@ import org.springframework.util.StringUtils;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class BeerCreatedListener {
+public class BeerListeners {
     private final BeerAuditRepository repository;
     private final BeerMapper mapper;
 
