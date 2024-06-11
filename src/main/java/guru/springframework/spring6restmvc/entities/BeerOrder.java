@@ -37,10 +37,10 @@ public class BeerOrder {
 
     private String customerRef;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     private Customer customer;
 
-    @OneToMany(mappedBy = "beerOrder")
+    @OneToMany(mappedBy = "beerOrder", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<BeerOrderLine> orderLines = new HashSet<>();
 

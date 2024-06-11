@@ -41,7 +41,7 @@ public class BeerOrderLine {
 
     private Integer quantityAllocated = 0;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     private BeerOrder beerOrder;
 
     @ManyToOne

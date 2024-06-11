@@ -1,8 +1,8 @@
 package guru.springframework.spring6restmvc.bootstrap;
 
-import guru.springframework.spring6restmvc.entities.Beer;
-import guru.springframework.spring6restmvc.entities.Customer;
+import guru.springframework.spring6restmvc.entities.*;
 import guru.springframework.spring6restmvc.model.BeerStyle;
+import guru.springframework.spring6restmvc.repositories.BeerOrderRepository;
 import guru.springframework.spring6restmvc.repositories.BeerRepository;
 import guru.springframework.spring6restmvc.repositories.CustomerRepository;
 import guru.springframework.spring6restmvc.services.BeerCsvService;
@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static java.time.LocalDateTime.now;
 
@@ -26,8 +28,10 @@ import static java.time.LocalDateTime.now;
 public class BootstrapData {
     private final BeerRepository beerRepository;
     private final CustomerRepository customerRepository;
+    private final BeerOrderRepository beerOrderRepository;
     private final BeerCsvService beerCsvService;
     private Resource resource;
+
 
     @Autowired
     public void setResource(@Value("classpath:csvdata/beers.csv") Resource resource) {
@@ -37,12 +41,13 @@ public class BootstrapData {
     @PostConstruct
     @Transactional
     public void init() {
-        initBeers();
+        loadBeers();
         loadCsvData();
-        initCustomers();
+        loadCustomers();
+        loadOrderData();
     }
 
-    private void initBeers() {
+    private void loadBeers() {
         if (beerRepository.count() == 0) {
             Beer beerDTO1 = Beer.builder()
                     .name("Galaxy Cat")
@@ -115,7 +120,7 @@ public class BootstrapData {
         };
     }
 
-    private void initCustomers() {
+    private void loadCustomers() {
         if (customerRepository.count() == 0) {
             Customer customerDTO1 = createCustomer("Alex");
             Customer customerDTO2 = createCustomer("Alice");
@@ -137,5 +142,37 @@ public class BootstrapData {
                 .createdDate(now())
                 .lastModifiedDate(now())
                 .build();
+    }
+
+    private void loadOrderData() {
+        if (beerOrderRepository.count() == 0) {
+            List<Beer> beers = beerRepository.findAll();
+            List<Customer> customers = customerRepository.findAll();
+
+            customers.forEach(customer -> {
+                Beer beer = beers.get(random(0, beers.size()));
+                Beer beer2 = beers.get(random(0, beers.size()));
+                beerOrderRepository.save(BeerOrder.builder()
+                        .orderLines(Set.of(BeerOrderLine.builder()
+                                        .beer(beer)
+                                        .orderQuantity(random(1, 500))
+                                        .quantityAllocated(random(1, 500))
+                                        .build(),
+                                BeerOrderLine.builder()
+                                        .beer(beer2)
+                                        .orderQuantity(random(1, 500))
+                                        .quantityAllocated(random(1, 500))
+                                        .build()))
+                        .beerOrderShipment(BeerOrderShipment.builder()
+                                .trackingNumber(String.valueOf(random(1, 10000)))
+                                .build())
+                        .build());
+            });
+
+        }
+    }
+
+    private int random(int from, int to) {
+        return ThreadLocalRandom.current().nextInt(from, to);
     }
 }
