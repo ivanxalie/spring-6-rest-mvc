@@ -1,9 +1,6 @@
 package guru.springframework.spring6restmvc.bootstrap;
 
-import guru.springframework.spring6restmvc.entities.Beer;
-import guru.springframework.spring6restmvc.entities.BeerOrder;
-import guru.springframework.spring6restmvc.entities.BeerOrderLine;
-import guru.springframework.spring6restmvc.entities.Customer;
+import guru.springframework.spring6restmvc.entities.*;
 import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.repositories.BeerOrderRepository;
 import guru.springframework.spring6restmvc.repositories.BeerRepository;
@@ -13,7 +10,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +19,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static java.time.LocalDateTime.now;
 
@@ -47,7 +44,7 @@ public class BootstrapData {
         loadBeers();
         loadCsvData();
         loadCustomers();
-        // todo fix order data load
+        // todo fix
 //        loadOrderData();
     }
 
@@ -150,39 +147,33 @@ public class BootstrapData {
 
     private void loadOrderData() {
         if (beerOrderRepository.count() == 0) {
-            val customers = customerRepository.findAll();
-            val beers = beerRepository.findAll();
-
-            val beerIterator = beers.iterator();
+            List<Beer> beers = beerRepository.findAll();
+            List<Customer> customers = customerRepository.findAll();
 
             customers.forEach(customer -> {
-
+                Beer beer = beers.get(random(0, beers.size()));
+                Beer beer2 = beers.get(random(0, beers.size()));
                 beerOrderRepository.save(BeerOrder.builder()
-                        .customer(customer)
-                        .orderLines(Set.of(
-                                BeerOrderLine.builder()
-                                        .beer(beerIterator.next())
-                                        .orderQuantity(1)
-                                        .build(),
-                                BeerOrderLine.builder()
-                                        .beer(beerIterator.next())
-                                        .orderQuantity(2)
-                                        .build()
-                        )).build());
-
-                beerOrderRepository.save(BeerOrder.builder()
-                        .customer(customer)
-                        .orderLines(Set.of(
-                                BeerOrderLine.builder()
-                                        .beer(beerIterator.next())
-                                        .orderQuantity(1)
-                                        .build(),
-                                BeerOrderLine.builder()
-                                        .beer(beerIterator.next())
-                                        .orderQuantity(2)
-                                        .build()
-                        )).build());
+//                        .orderLines(Set.of(BeerOrderLine.builder()
+//                                        .beer(beer)
+//                                        .orderQuantity(random(1, 500))
+//                                        .quantityAllocated(random(1, 500))
+//                                        .build(),
+//                                BeerOrderLine.builder()
+//                                        .beer(beer2)
+//                                        .orderQuantity(random(1, 500))
+//                                        .quantityAllocated(random(1, 500))
+//                                        .build()))
+                        .beerOrderShipment(BeerOrderShipment.builder()
+                                .trackingNumber(String.valueOf(random(1, 10000)))
+                                .build())
+                        .build());
             });
+
         }
+    }
+
+    private int random(int from, int to) {
+        return ThreadLocalRandom.current().nextInt(from, to);
     }
 }
