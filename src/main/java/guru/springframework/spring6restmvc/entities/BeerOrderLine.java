@@ -2,10 +2,7 @@ package guru.springframework.spring6restmvc.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -41,7 +38,7 @@ public class BeerOrderLine {
 
     private Integer quantityAllocated = 0;
 
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne
     private BeerOrder beerOrder;
 
     @ManyToOne
